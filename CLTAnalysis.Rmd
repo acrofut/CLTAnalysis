@@ -1,0 +1,12 @@
+---
+title: "Exponential Distribution and Analysis of Central Limit Theorem"
+author: "F. Alex Crofut"
+date: "Sunday, April 10, 2016"
+output: html_document
+---
+
+# Load Packages
+```{r}
+if (!"ggplot2" %in% installed.packages()) install.packages("ggplot2")
+library("ggplot2")
+```
