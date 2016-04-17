@@ -6,58 +6,113 @@ output: html_document
 ---
 
 ###Overview
+The purpose of this project is to investigate the exponential distribution and compare it with the Central Limit 
+Theorem (CLT).  The approach is to take 1,000 simulations of an exponential distribution of size 40 and rate of lambda = 0.2.
+the theoretical mean of the exponential distribution is therefore 1/0.2 = 5 and the theoretical standard deviation
+is also 1/0.2 = 5.  Then the distribution of the means of the simulations is examined and compared to the theoretical 
+distribution and normal curve to determine if the CLT holds. This project will examine the following results to make
+these determinations.  
+
+- Compare the sample mean and theoretical mean of the distribution  
+- Compare the variance of the sample to the theoretical variance of the distribution  
+- Show the distribution is approximately normal  
+- Determine the 95% confidence interval and determine if the theoretical mean is included in the range.
 
 ###Load Packages
+This analysis utilizes the following packages:  
+
+- ggplot2   
+- plyr   
+- knitr   
+
+The folowing r code will determine if the required package is available, and if not, will install it.  The packages
+are then loaded.
 ```{r loadpackages}
 if (!"ggplot2" %in% installed.packages()) install.packages("ggplot2")
 library("ggplot2")
 if (!"plyr" %in% installed.packages()) install.packages("plyr")
 library("plyr")
+if (!"knitr" %in% installed.packages()) install.packages("knitr")
+library("knitr")
 ```
 
 ###Simulations
+The seed is set in order to maintain reproducibility of the project.  One thousand simulations of exponential 
+distributions of size 40 are taken and added to a matrix.  The means of each simulation are stored in a vector.  
 ```{r simulations}
-n <- 40
-lambda <- 0.2
-nsims <- 1000
+set.seed(123) # set the seed
 
-set.seed(123)
+n <- 40 # size of each simulation
+lambda <- 0.2 # given value of lambda, the rate parameter
+nsims <- 1000 # no. of simulations
+
+# create a matrix with results of random sampling
 sims <- matrix(rexp(nsims * n, rate=lambda), nsims)
 
+# store the means of each simulation
 simsMeans <- apply(sims, 1, mean)
 ```
 
 ###Sample Mean versus Theoretical Mean
+With the simulations completed, one can now compare the sample mean to the theoretical mean.  According to the CLT, 
+these should be approximately equal.
 ```{r samplemean}
 sampleMean <- mean(sims)
 theoreticalMean <- 1 / lambda
 ```
 
-The sample mean is `r I(sampleMean)` while the theoretical mean is `r I(theoreticalMean)`, a difference of only 
-`r I(sampleMean) - I(theoreticalMean)`.  This can be seen in the following figure:
-
+The sample mean is `r I(round(sampleMean,3))` while the theoretical mean is `r I(round(theoreticalMean,3))`, a difference of only 
+`r I(round(sampleMean,3)) - I(round(theoreticalMean,3))`.  In the figure below, one can see first that the distribution appears
+to be approximately normal.  One can also see that the mean of the simulations (green line) is indeed approximately the same as 
+the theoretical mean (red dashed line).
 ```{r meangraph}
 meansPlot <- ggplot() + aes(simsMeans) + geom_histogram(binwidth=.1, colour="black", fill="white") + 
     geom_vline(xintercept=sampleMean, color="green", size=2) + 
-    geom_vline(xintercept=theoreticalMean, color="red", size=2, linetype=2)
+    geom_vline(xintercept=theoreticalMean, color="red", size=2, linetype=2) + 
+    labs(x="Simulation Means", 
+         y="Count", 
+         title="Histogram of Simulation Means")
 meansPlot
 ```
 
 ###Sample Variance versus Theoretical Variance
-```{r samplevariance, results='asis'}
-theoreticalVar <- (1/lambda)^2/n
+The sample variance and theoretical variance must also be compared in order to determine that the CLT holds.  Below, the 
+variance for the simulations' means and the theoretical variation is calculated.
+```{r samplevariance}
 sampleVar <- var(simsMeans)
+theoreticalVar <- (1/lambda)^2/n
 ```
 
-The sample variation is `r I(sampleVar)` while the theoretical variation is `r I(theoreticalVar)`, a difference of only 
-`r I(sampleVar) - I(theoreticalVar)`.  This can be seen in the following figure:
+Sample Variance | Theoretical Variance | Difference
+--------------- | -------------------- | ----------
+`r I(round(sampleVar,3))` | `r I(round(theoreticalVar,3))` | `r I(round(sampleVar,3)) - I(round(theoreticalVar,3))`
+
+As seen in the table above, the variances of the simulation means is quite close to the theoretical variance.
 
 ###Distribution
+In order to determine if the simulation means appear to be normal, one can look once more at the histogram, this time
+super-imposing a normal curve (red line) with the theoretical mean and standard deviation.
 ```{r distribution}
 dat <- data.frame(simsMeans)
 
 distPlot <- ggplot(dat, aes(x=simsMeans)) +
       geom_histogram(binwidth=0.1, aes(y=..density..), color="black", fill="white") +
-      stat_function(fun=dnorm, color="red", args=list(mean=theoreticalMean, sd=sqrt(theoreticalVar)))
+      stat_function(fun=dnorm, color="red", args=list(mean=theoreticalMean, sd=sqrt(theoreticalVar))) + 
+      labs(x="Simulation Means", 
+         y="Count", 
+         title="Histogram of Simulation Means vs. Normal curve")
 distPlot
 ```
+
+One can visually determine from the above figure that the distribution closely follows the normal curve.  One can
+also determine whether or not the theoretical mean of `r I(theoreticalMean)` lies within the 95% confidence interval
+of our simulation means distribution.
+```{r confidenceintervals}
+sample95Int <- sampleMean + c(-1,1) * qnorm(0.975) * sqrt(sampleVar) / sqrt(n)
+```
+
+The sample 95% confidence interval is `r I(round(sample95Int[1],3))` to `r I(round(sample95Int[2],3))`, which includes
+the theoretical mean of 5.  This means that one can be 95% confident that the theoretical mean is contained within the 
+distribution of our sample means.
+
+###Conclusion
