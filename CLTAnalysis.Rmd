@@ -5,8 +5,59 @@ date: "Sunday, April 10, 2016"
 output: html_document
 ---
 
-# Load Packages
-```{r}
+###Overview
+
+###Load Packages
+```{r loadpackages}
 if (!"ggplot2" %in% installed.packages()) install.packages("ggplot2")
 library("ggplot2")
+if (!"plyr" %in% installed.packages()) install.packages("plyr")
+library("plyr")
+```
+
+###Simulations
+```{r simulations}
+n <- 40
+lambda <- 0.2
+nsims <- 1000
+
+set.seed(123)
+sims <- matrix(rexp(nsims * n, rate=lambda), nsims)
+
+simsMeans <- apply(sims, 1, mean)
+```
+
+###Sample Mean versus Theoretical Mean
+```{r samplemean}
+sampleMean <- mean(sims)
+theoreticalMean <- 1 / lambda
+```
+
+The sample mean is `r I(sampleMean)` while the theoretical mean is `r I(theoreticalMean)`, a difference of only 
+`r I(sampleMean) - I(theoreticalMean)`.  This can be seen in the following figure:
+
+```{r meangraph}
+meansPlot <- ggplot() + aes(simsMeans) + geom_histogram(binwidth=.1, colour="black", fill="white") + 
+    geom_vline(xintercept=sampleMean, color="green", size=2) + 
+    geom_vline(xintercept=theoreticalMean, color="red", size=2, linetype=2)
+meansPlot
+```
+
+###Sample Variance versus Theoretical Variance
+```{r samplevariance, results='asis'}
+theoreticalVar <- (1/lambda)^2/n
+sampleVar <- var(simsMeans)
+```
+
+The sample variation is `r I(sampleVar)` while the theoretical variation is `r I(theoreticalVar)`, a difference of only 
+`r I(sampleVar) - I(theoreticalVar)`.  This can be seen in the following figure:
+
+###Distribution
+```{r distribution}
+dat <- data.frame(simsMeans)
+
+distPlot <- ggplot(dat, aes(x=simsMeans)) +
+      geom_histogram(binwidth=0.1, aes(y=..density..), color="black", fill="white") +
+      stat_function(fun=dnorm, color="red", args=list(mean=theoreticalMean, sd=sqrt(theoreticalVar)))
+distPlot
 ```
